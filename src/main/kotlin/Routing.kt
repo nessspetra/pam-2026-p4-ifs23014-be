@@ -2,22 +2,24 @@ package org.delcom
 
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.*
-import io.ktor.server.plugins.statuspages.StatusPages
+import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.delcom.data.AppException
 import org.delcom.data.ErrorResponse
 import org.delcom.helpers.parseMessageToMap
 import org.delcom.services.PlantService
+import org.delcom.services.FoodService // Import Service baru
 import org.delcom.services.ProfileService
 import org.koin.ktor.ext.inject
 
 fun Application.configureRouting() {
     val plantService: PlantService by inject()
+    val foodService: FoodService by inject() // Suntikkan FoodService
     val profileService: ProfileService by inject()
 
     install(StatusPages) {
-        // Tangkap AppException
+        // Tangkap AppException (tetap sama untuk semua endpoint)
         exception<AppException> { call, cause ->
             val dataMap: Map<String, List<String>> = parseMessageToMap(cause.message)
 
@@ -49,30 +51,40 @@ fun Application.configureRouting() {
             call.respondText("API telah berjalan. Dibuat oleh Gayus Jones Petra.")
         }
 
-        // Route Plants
+        // --- Route Plants (Tetap Dipertahankan) ---
         route("/plants") {
+            get { plantService.getAllPlants(call) }
+            post { plantService.createPlant(call) }
+            get("/{id}") { plantService.getPlantById(call) }
+            put("/{id}") { plantService.updatePlant(call) }
+            delete("/{id}") { plantService.deletePlant(call) }
+            get("/{id}/image") { plantService.getPlantImage(call) }
+        }
+
+        // --- Route Foods (Aplikasi Baru Kamu) ---
+        route("/foods") {
             get {
-                plantService.getAllPlants(call)
+                foodService.getAllFoods(call)
             }
             post {
-                plantService.createPlant(call)
+                foodService.createFood(call)
             }
             get("/{id}") {
-                plantService.getPlantById(call)
+                foodService.getFoodById(call)
             }
             put("/{id}") {
-                plantService.updatePlant(call)
+                foodService.updateFood(call)
             }
             delete("/{id}") {
-                plantService.deletePlant(call)
+                foodService.deleteFood(call)
             }
-
+            // Route untuk mengambil gambar makanan
             get("/{id}/image") {
-                plantService.getPlantImage(call)
+                foodService.getFoodImage(call)
             }
         }
 
-        // Route Profile
+        // --- Route Profile ---
         route("/profile"){
             get {
                 profileService.getProfile(call)
